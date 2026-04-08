@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+    <nav class="bg-gray-800 border-b border-green-500/30 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span class="text-xl font-bold tracking-widest text-green-400">3FA SYSTEM_CORE</span>
+        </div>
+        <div>
+            <a href="{{ url_for('phase1.logout') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold transition shadow-[0_0_10px_rgba(220,38,38,0.5)]">
+                Terminate Session
+            </a>
+        </div>
+    </nav>
+
+    <main class="flex-grow p-10">
+        <div class="max-w-5xl mx-auto">
+            
+            <header class="mb-10 border-b border-gray-700 pb-5">
+                <h1 class="text-4xl font-light">Welcome back, <span class="text-green-400 font-bold">{{ username }}</span>.</h1>
+                <p class="text-gray-400 mt-2">Identity verified via Password, SMS Token, and Biometric Analysis.</p>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300">System Status</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                            <span>Network Traffic</span>
+                            <span class="text-green-500 flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span> Encrypted</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                            <span>Firewall Intrusion Rules</span>
+                            <span class="text-green-500">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Last Failed Login Attempt</span>
+                            <span class="text-gray-400">0 attempts detected</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg font-mono text-sm">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-300 font-sans">Recent Authentication Logs</h2>
+                    <ul class="text-green-400 space-y-2 opacity-80">
+                        <li>> [SYSTEM] {{ username }} - Biometric Match (99.8%)</li>
+                        <li>> [SYSTEM] {{ username }} - OTP Validated (Gate 2)</li>
+                        <li>> [SYSTEM] {{ username }} - Knowledge Check OK (Gate 1)</li>
+                        <li>> [SYSTEM] Connection established from 127.0.0.1</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

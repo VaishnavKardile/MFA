@@ -1,0 +1,24 @@
+/* 3FA Design System - Shared Styles */
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-deep: #04070f;
+  --bg-card: #080e1c;
+  --bg-card-hover: #0c1425;
+  --border: #1a2a4a;
+  --border-glow: #00d4ff40;
+  --cyan: #00d4ff;
+  --cyan-dim: #00d4ff80;
+  --green: #00ff88;
+  --green-dim: #00ff8860;
+  --red: #ff3860;
+  --red-dim: #ff386040;
+  --amber: #ffb800;
+  --text-primary: #e8f4ff;
+  --text-secondary: #7a9cc0;
+  --text-mono: #00d4ff;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --shadow-glow: 0 0 30px #00d4ff18, 0 0 60px #00d4ff08;
+  --shadow-card: 0 24px 48px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+}

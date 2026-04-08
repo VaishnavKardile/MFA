@@ -1,0 +1,541 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>3FA - Login</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        form { margin: 20px auto; width: 300px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input { display: block; width: 90%; margin: 10px auto; padding: 10px; }
+        button { padding: 10px 20px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 5px; width: 95%;}
+    </style>
+</head>
+<body>
+    <h2>3FA Secure Login</h2>
+    <p>Gate 1: Knowledge Factor</p>
+
+    <form method="POST" action="/login">
+        <input type="text" name="username" placeholder="Username" required autofocus>
+        <input type="password" name="password" placeholder="Password" required>
+        <button type="submit">Verify Password</button>
+    </form>
+    
+    <p><a href="/signup">Don't have an account? Sign up here.</a></p>
+</body>
+</html> -->
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3FA Secure Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-deep: #04070f;
+            --bg-card: #080e1c;
+            --border: #1a2a4a;
+            --cyan: #00d4ff;
+            --green: #00ff88;
+            --red: #ff3860;
+            --amber: #ffb800;
+            --text-primary: #e8f4ff;
+            --text-secondary: #5a7a9a;
+            --font-display: 'Rajdhani', sans-serif;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Radial glow behind card */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(0,212,255,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Brand Header ── */
+        .brand {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .brand-logo {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 4px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .brand-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--cyan), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ── Gate Tracker ── */
+        .gate-tracker {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            margin-bottom: 28px;
+        }
+
+        .gate-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .gate-step.active {
+            color: var(--cyan);
+        }
+
+        .gate-step.active .gate-dot {
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+        }
+
+        .gate-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            border: 1px solid currentColor;
+        }
+
+        .gate-line {
+            width: 36px;
+            height: 1px;
+            background: var(--border);
+            margin: 0 6px;
+        }
+
+        /* ── Card ── */
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            width: 400px;
+            overflow: hidden;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,212,255,0.08);
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Top accent line */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+        }
+
+        .card-header {
+            padding: 24px 28px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .gate-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            text-transform: uppercase;
+        }
+
+        .gate-name {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+        }
+
+        .gate-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            background: rgba(0,212,255,0.04);
+        }
+
+        .card-body {
+            padding: 28px;
+        }
+
+        /* ── Flash Messages ── */
+        .flash-container {
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-left: 3px solid;
+            background: rgba(255,56,96,0.07);
+            border-color: var(--red);
+            border-radius: 0 2px 2px 0;
+            margin-bottom: 8px;
+        }
+
+        .flash-icon {
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .flash-text {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--red);
+            letter-spacing: 0.5px;
+            line-height: 1.5;
+        }
+
+        .flash.success {
+            background: rgba(0,255,136,0.07);
+            border-color: var(--green);
+        }
+
+        .flash.success .flash-text {
+            color: var(--green);
+        }
+
+        .flash.info {
+            background: rgba(0,212,255,0.07);
+            border-color: var(--cyan);
+        }
+
+        .flash.info .flash-text {
+            color: var(--cyan);
+        }
+
+        /* ── Form Elements ── */
+        .field {
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .field-wrap {
+            position: relative;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: 13px 14px 13px 40px;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            letter-spacing: 1px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px rgba(0,212,255,0.12), inset 0 0 12px rgba(0,212,255,0.04);
+            background: rgba(0,212,255,0.03);
+        }
+
+        input::placeholder {
+            color: rgba(90,122,154,0.6);
+            font-size: 12px;
+        }
+
+        /* ── Submit Button ── */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.3s, box-shadow 0.3s;
+            margin-top: 6px;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--cyan), var(--green));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary:hover { color: #04070f; box-shadow: 0 0 24px rgba(0,212,255,0.3); }
+
+        .btn-primary span { position: relative; z-index: 1; }
+
+        /* Loading state */
+        .btn-primary.loading span { opacity: 0; }
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 18px; height: 18px;
+            border: 2px solid rgba(0,212,255,0.3);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        /* ── Footer ── */
+        .card-footer {
+            padding: 16px 28px 20px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .card-footer a {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+
+        .card-footer a:hover { color: var(--cyan); }
+        .card-footer a span { color: var(--cyan); }
+
+        /* ── Status bar ── */
+        .status-bar {
+            position: relative;
+            z-index: 1;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-secondary);
+            letter-spacing: 2px;
+        }
+
+        .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Corner decorations */
+        .corner-tl, .corner-br {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: var(--cyan);
+            border-style: solid;
+            opacity: 0.4;
+        }
+
+        .corner-tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+        .corner-br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+    </style>
+</head>
+<body>
+    <div class="brand">
+        <div class="brand-logo">// Secure Authentication Protocol</div>
+        <div class="brand-title">3FA System</div>
+    </div>
+
+    <div class="gate-tracker">
+        <div class="gate-step active">
+            <div class="gate-dot"></div>
+            <span>Gate 1</span>
+        </div>
+        <div class="gate-line"></div>
+        <div class="gate-step">
+            <div class="gate-dot"></div>
+            <span>Gate 2</span>
+        </div>
+        <div class="gate-line"></div>
+        <div class="gate-step">
+            <div class="gate-dot"></div>
+            <span>Gate 3</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="corner-tl"></div>
+        <div class="corner-br"></div>
+
+        <div class="card-header">
+            <div class="card-header-left">
+                <span class="gate-label">// Gate 01</span>
+                <span class="gate-name">Knowledge Factor</span>
+            </div>
+            <span class="gate-badge">PASSPHRASE</span>
+        </div>
+
+        <div class="card-body">
+            <!-- Flash messages will be injected here by Flask -->
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">
+                        <span class="flash-icon">{% if category == 'success' %}✓{% elif category == 'info' %}ℹ{% else %}⚠{% endif %}</span>
+                        <span class="flash-text">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <form method="POST" action="/login" id="loginForm" autocomplete="off">
+                <div class="field">
+                    <label class="field-label" for="username">Identifier</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">◈</span>
+                        <input type="text" id="username" name="username" placeholder="Enter username" required autofocus autocomplete="off">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="password">Passphrase</label>
+                    <div class="field-wrap">
+                        <span class="field-icon">◆</span>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required autocomplete="new-password">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" id="submitBtn">
+                    <span>Verify &amp; Proceed</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="card-footer">
+            <a href="/signup">No credentials? <span>Request access →</span></a>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot"></div>
+        <span>TLS 1.3 · END-TO-END ENCRYPTED · SESSION SECURE</span>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            const btn = document.getElementById('submitBtn');
+            btn.classList.add('loading');
+        });
+    </script>
+</body>
+</html>

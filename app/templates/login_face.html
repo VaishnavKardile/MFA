@@ -1,0 +1,496 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>3FA - Gate 3</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; }
+        #video-container { margin: 20px auto; width: 640px; border: 4px solid #dc3545; border-radius: 8px; overflow: hidden; background: #000; }
+        video { width: 100%; height: auto; display: block; }
+        button { padding: 12px 24px; font-size: 1.2em; cursor: pointer; background-color: #dc3545; color: white; border: none; border-radius: 5px; margin-top: 15px; }
+        button:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <h2>3FA Secure Login</h2>
+    <p>Gate 3: Inherence Factor</p>
+    <p>Verifying biometric identity for: <strong>{{ username }}</strong></p>
+
+    <div id="video-container">
+        <video id="webcam" autoplay playsinline></video>
+    </div>
+
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <form id="faceForm" method="POST" action="/login-face">
+        <input type="hidden" name="username" value="{{ username }}">
+        <input type="hidden" id="image_data" name="image_data">
+        
+        <button type="button" id="captureBtn">👁️ Verify Face & Login</button>
+    </form>
+
+    <script src="{{ url_for('static', filename='js/capture_face.js') }}"></script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3FA — Gate 3: Biometric</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-deep: #04070f;
+            --bg-card: #080e1c;
+            --border: #1a2a4a;
+            --cyan: #00d4ff;
+            --green: #00ff88;
+            --red: #ff3860;
+            --amber: #ffb800;
+            --text-primary: #e8f4ff;
+            --text-secondary: #5a7a9a;
+            --font-display: 'Rajdhani', sans-serif;
+            --font-mono: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            font-family: var(--font-display);
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+            padding: 40px 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+
+        body::after {
+            content: '';
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 800px; height: 800px;
+            background: radial-gradient(ellipse, rgba(255,56,96,0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .brand { position: relative; z-index: 1; text-align: center; margin-bottom: 12px; }
+
+        .brand-logo {
+            font-family: var(--font-mono); font-size: 11px;
+            letter-spacing: 4px; color: var(--text-secondary);
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        .brand-title {
+            font-size: 32px; font-weight: 700; letter-spacing: 6px; text-transform: uppercase;
+            background: linear-gradient(135deg, var(--cyan), var(--green));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+
+        .gate-tracker {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; margin-bottom: 28px;
+        }
+
+        .gate-step {
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 10px;
+            letter-spacing: 1px; color: var(--text-secondary); text-transform: uppercase;
+        }
+
+        .gate-step.done { color: var(--green); }
+        .gate-step.done .gate-dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .gate-step.active { color: var(--red); }
+        .gate-step.active .gate-dot {
+            background: var(--red);
+            box-shadow: 0 0 8px var(--red);
+            animation: pulseDot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { box-shadow: 0 0 8px var(--red); }
+            50% { box-shadow: 0 0 20px var(--red), 0 0 40px rgba(255,56,96,0.4); }
+        }
+
+        .gate-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); border: 1px solid currentColor; }
+        .gate-line { width: 36px; height: 1px; background: var(--border); margin: 0 6px; }
+        .gate-line.done { background: var(--green); }
+
+        .card {
+            position: relative; z-index: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 2px; width: 700px; max-width: 100%;
+            overflow: hidden;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,56,96,0.06);
+            animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+        }
+
+        .card-header {
+            padding: 24px 28px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .gate-label {
+            font-family: var(--font-mono); font-size: 10px;
+            letter-spacing: 3px; color: var(--red); text-transform: uppercase; margin-bottom: 4px;
+        }
+
+        .gate-name { font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+
+        .gate-badge {
+            font-family: var(--font-mono); font-size: 10px;
+            padding: 4px 10px; border: 1px solid rgba(255,56,96,0.3);
+            color: var(--red); letter-spacing: 1px; background: rgba(255,56,96,0.04);
+        }
+
+        .card-body { padding: 28px; }
+
+        .flash-container { margin-bottom: 20px; }
+
+        .flash {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 12px 14px; border-left: 3px solid var(--red);
+            background: rgba(255,56,96,0.07); border-radius: 0 2px 2px 0; margin-bottom: 8px;
+        }
+
+        .flash.success { border-color: var(--green); background: rgba(0,255,136,0.07); }
+        .flash.info { border-color: var(--cyan); background: rgba(0,212,255,0.07); }
+        .flash-icon { font-size: 13px; flex-shrink: 0; }
+        .flash-text { font-family: var(--font-mono); font-size: 12px; color: var(--red); letter-spacing: 0.5px; }
+        .flash.success .flash-text { color: var(--green); }
+        .flash.info .flash-text { color: var(--cyan); }
+
+        .user-strip {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,56,96,0.04);
+            border: 1px solid rgba(255,56,96,0.12);
+            border-radius: 2px; padding: 12px 16px; margin-bottom: 20px;
+        }
+
+        .user-strip-icon { font-size: 16px; }
+        .user-strip-text { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); letter-spacing: 1px; }
+        .user-strip-name { color: var(--red); font-size: 13px; }
+
+        .webcam-section { position: relative; margin-bottom: 20px; }
+
+        .webcam-frame {
+            position: relative; background: #000;
+            border: 1px solid var(--border); border-radius: 2px;
+            overflow: hidden; aspect-ratio: 16/9;
+        }
+
+        video { width: 100%; height: 100%; display: block; object-fit: cover; }
+
+        .scan-overlay { position: absolute; inset: 0; pointer-events: none; }
+
+        /* Face targeting reticle */
+        .face-reticle {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px; height: 240px;
+            border: 1px dashed rgba(255,56,96,0.4);
+            border-radius: 50%;
+        }
+
+        .face-reticle::before {
+            content: '';
+            position: absolute; inset: -10px;
+            border: 1px dashed rgba(255,56,96,0.15);
+            border-radius: 50%;
+        }
+
+        .reticle {
+            position: absolute; width: 24px; height: 24px;
+            border-color: var(--red); border-style: solid; opacity: 0.8;
+        }
+
+        .reticle.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+        .reticle.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+        .reticle.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+        .reticle.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+        .scan-line {
+            position: absolute; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--red), transparent);
+            opacity: 0; animation: none;
+        }
+
+        .scan-line.active { opacity: 0.5; animation: scanMove 1.8s linear infinite; }
+
+        @keyframes scanMove { 0% { top: 0%; } 100% { top: 100%; } }
+
+        .webcam-status {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(4,7,15,0.9));
+            padding: 20px 16px 12px;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        .webcam-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+        .webcam-status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 1s ease-in-out infinite; }
+        .webcam-status-text { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); letter-spacing: 1px; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .instructions {
+            display: flex; gap: 10px;
+            background: rgba(255,56,96,0.04);
+            border: 1px solid rgba(255,56,96,0.12);
+            border-radius: 2px; padding: 14px 16px; margin-bottom: 20px;
+        }
+
+        .instructions-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+        .instructions-text {
+            font-family: var(--font-mono); font-size: 11px;
+            color: rgba(255,56,96,0.7); letter-spacing: 0.5px; line-height: 1.7;
+        }
+
+        .btn-primary {
+            width: 100%; padding: 16px;
+            background: transparent; border: 1px solid var(--red);
+            color: var(--red); font-family: var(--font-display);
+            font-size: 16px; font-weight: 700; letter-spacing: 4px;
+            text-transform: uppercase; cursor: pointer; border-radius: 2px;
+            position: relative; overflow: hidden; transition: color 0.3s, box-shadow 0.3s;
+        }
+
+        .btn-primary::before {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(135deg, var(--red), #c82333);
+            opacity: 0; transition: opacity 0.3s;
+        }
+
+        .btn-primary:hover::before { opacity: 1; }
+        .btn-primary:hover { color: #fff; box-shadow: 0 0 32px rgba(255,56,96,0.3); }
+        .btn-primary span { position: relative; z-index: 1; }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary:disabled:hover::before { opacity: 0; }
+        .btn-primary:disabled:hover { color: var(--red); box-shadow: none; }
+
+        .btn-primary.loading span { opacity: 0; }
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px; height: 22px;
+            border: 2px solid rgba(255,56,96,0.3);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .loading-label {
+            display: none; text-align: center; margin-top: 12px;
+            font-family: var(--font-mono); font-size: 11px;
+            color: var(--red); letter-spacing: 2px;
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        .loading-label.visible { display: block; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        .status-bar {
+            position: relative; z-index: 1; margin-top: 20px;
+            display: flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 10px;
+            color: var(--text-secondary); letter-spacing: 2px;
+        }
+
+        .status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--green); box-shadow: 0 0 6px var(--green);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .corner-tl, .corner-br {
+            position: absolute; width: 12px; height: 12px;
+            border-color: var(--red); border-style: solid; opacity: 0.4;
+        }
+
+        .corner-tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+        .corner-br { bottom: 10px; right: 10px; border-width: 0 1px 1px 0; }
+    </style>
+</head>
+<body>
+    <div class="brand">
+        <div class="brand-logo">// Secure Authentication Protocol</div>
+        <div class="brand-title">3FA System</div>
+    </div>
+
+    <div class="gate-tracker">
+        <div class="gate-step done"><div class="gate-dot"></div><span>Gate 1</span></div>
+        <div class="gate-line done"></div>
+        <div class="gate-step done"><div class="gate-dot"></div><span>Gate 2</span></div>
+        <div class="gate-line done"></div>
+        <div class="gate-step active"><div class="gate-dot"></div><span>Gate 3</span></div>
+    </div>
+
+    <div class="card">
+        <div class="corner-tl"></div>
+        <div class="corner-br"></div>
+
+        <div class="card-header">
+            <div>
+                <div class="gate-label">// Gate 03 — Final</div>
+                <div class="gate-name">Biometric Verification</div>
+            </div>
+            <span class="gate-badge">INHERENCE</span>
+        </div>
+
+        <div class="card-body">
+            <div class="flash-container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="flash {{ category }}">
+                        <span class="flash-icon">{% if category == 'success' %}✓{% elif category == 'info' %}ℹ{% else %}⚠{% endif %}</span>
+                        <span class="flash-text">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+            </div>
+
+            <div class="user-strip">
+                <span class="user-strip-icon">◈</span>
+                <div>
+                    <div class="user-strip-text">Verifying biometric identity for:</div>
+                    <div class="user-strip-name">{{ username }}</div>
+                </div>
+            </div>
+
+            <div class="webcam-section">
+                <div class="webcam-frame">
+                    <video id="webcam" autoplay playsinline></video>
+                    <div class="scan-overlay">
+                        <div class="face-reticle"></div>
+                        <div class="reticle tl"></div>
+                        <div class="reticle tr"></div>
+                        <div class="reticle bl"></div>
+                        <div class="reticle br"></div>
+                        <div class="scan-line" id="scanLine"></div>
+                    </div>
+                    <div class="webcam-status">
+                        <div class="webcam-status-dot" id="statusDot"></div>
+                        <span class="webcam-status-text" id="statusText">INITIALIZING BIOMETRIC SCANNER...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="instructions">
+                <span class="instructions-icon">👁️</span>
+                <span class="instructions-text">
+                    ALIGN FACE WITH THE OVAL GUIDE · HOLD STILL DURING CAPTURE<br>
+                    ENSURE YOUR FULL FACE IS VISIBLE AND WELL-LIT
+                </span>
+            </div>
+
+            <canvas id="canvas" style="display:none;"></canvas>
+
+            <form id="faceForm" method="POST" action="/login-face">
+                <input type="hidden" name="username" value="{{ username }}">
+                <input type="hidden" id="image_data" name="image_data">
+                <button type="button" id="captureBtn" class="btn-primary">
+                    <span>👁️ Verify Identity &amp; Access System</span>
+                </button>
+                <div class="loading-label" id="loadingLabel">
+                    ⟳ RUNNING FACIAL RECOGNITION... COMPARING BIOMETRIC VECTORS...
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-dot"></div>
+        <span>TLS 1.3 · END-TO-END ENCRYPTED · BIOMETRIC PROCESSING ON-SERVER</span>
+    </div>
+
+    <script>
+        // Self-contained — does not rely on capture_face.js to avoid handler conflicts
+        const video       = document.getElementById('webcam');
+        const canvas      = document.getElementById('canvas');
+        const captureBtn  = document.getElementById('captureBtn');
+        const imageInput  = document.getElementById('image_data');
+        const faceForm    = document.getElementById('faceForm');
+        const statusDot   = document.getElementById('statusDot');
+        const statusText  = document.getElementById('statusText');
+        const scanLine    = document.getElementById('scanLine');
+        const loadingLabel = document.getElementById('loadingLabel');
+
+        let cameraReady = false;
+
+        // Start webcam
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.onloadedmetadata = function() {
+                    video.play();
+                    cameraReady = true;
+                    statusDot.classList.add('live');
+                    statusText.textContent = 'BIOMETRIC SCANNER ACTIVE · AWAITING CAPTURE';
+                    scanLine.classList.add('active');
+                };
+            })
+            .catch(function(err) {
+                statusText.textContent = 'ERROR: CAMERA ACCESS DENIED — CANNOT COMPLETE GATE 3';
+                statusText.style.color = 'var(--red)';
+            });
+
+        // Capture & submit
+        captureBtn.addEventListener('click', function() {
+            if (!cameraReady) {
+                statusText.textContent = 'WAITING FOR CAMERA... PLEASE ALLOW ACCESS';
+                statusText.style.color = 'var(--amber)';
+                return;
+            }
+
+            // Draw current video frame to canvas
+            canvas.width  = video.videoWidth  || 640;
+            canvas.height = video.videoHeight || 480;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            imageInput.value = canvas.toDataURL('image/jpeg', 0.85);
+
+            // Visual feedback
+            captureBtn.classList.add('loading');
+            loadingLabel.classList.add('visible');
+            statusText.textContent = 'PROCESSING BIOMETRIC DATA...';
+            scanLine.style.animationDuration = '0.3s';
+
+            // Submit form
+            faceForm.submit();
+        });
+    </script>
+</body>
+</html>
