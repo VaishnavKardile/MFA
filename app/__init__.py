@@ -1,23 +1,20 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from urllib.parse import quote_plus  # Add this import
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
-    
-    # 1. Define your password as a plain string
-    raw_password = "Your@Password@With@Special@Chars" 
-    
-    # 2. Let Python handle the encoding for you safely
-    encoded_password = quote_plus(raw_password)
-    
-    # 3. Build the URI using the encoded password
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://root:Vaishnav%4023510@127.0.0.1:3306/3fa_db"
-    
-    app.config['SECRET_KEY'] = 'super_secret_key_for_major_project'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
 
