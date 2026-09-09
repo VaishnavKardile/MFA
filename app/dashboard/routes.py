@@ -1,7 +1,7 @@
-from flask import Blueprint, render_template, session, redirect, url_for, flash
-
-# Define the blueprint
-dashboard_bp = Blueprint('dashboard', __name__)
+from flask import render_template, session, redirect, url_for, flash
+from . import dashboard_bp
+# # Define the blueprint
+# dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/dashboard')
 def index():

@@ -81,19 +81,18 @@ import time
 from flask import render_template, request, redirect, url_for, session, flash
 from ..models import User
 from .. import db
-from .otp_logic import generate_sms_otp, send_otp_via_sms
+from .otp_logic import generate_sms_otp, send_otp_async
 from . import phase2_bp
 
-# ---------------------------------------------------------------------------
 # Security constants
-# ---------------------------------------------------------------------------
+
 OTP_TTL_SECONDS  = 600   # OTP is valid for 10 minutes
 MAX_OTP_ATTEMPTS = 3     # Lock out after 3 wrong guesses
 
 
-# ---------------------------------------------------------------------------
+
 # Internal helpers
-# ---------------------------------------------------------------------------
+
 
 def _require_gate1():
     """
@@ -115,9 +114,7 @@ def _otp_is_expired() -> bool:
     return (time.time() - issued_at) > OTP_TTL_SECONDS
 
 
-# ===========================================================================
 # REGISTRATION FLOW — Phase 2: Possession (SMS Setup)
-# ===========================================================================
 
 @phase2_bp.route("/setup-sms/<username>", methods=["GET", "POST"])
 def setup_sms(username):
@@ -141,7 +138,7 @@ def setup_sms(username):
         session["otp_issued_at"]  = time.time()
         session["otp_attempts"]   = 0
 
-        if send_otp_via_sms(phone, otp):
+        if send_otp_async(phone, otp):
             flash("Verification code sent! Enter it below.", "info")
             return redirect(url_for("phase2.verify_sms_page", username=username))
 
@@ -197,9 +194,8 @@ def verify_sms_page(username):
     return render_template("verify_sms.html", username=username)
 
 
-# ===========================================================================
+
 # LOGIN FLOW — Gate 2: Possession (SMS Verification)
-# ===========================================================================
 
 @phase2_bp.route("/login-sms", methods=["GET", "POST"])
 def login_sms():
@@ -255,10 +251,40 @@ def login_sms():
     session["otp_issued_at"] = time.time()
     session["otp_attempts"]  = 0
 
-    if not send_otp_via_sms(user.phone_number, otp):
-        flash(
-            "Failed to send SMS. Please try again or contact support.",
-            "error",
-        )
+    send_otp_async(user.phone_number, otp)
 
     return render_template("login_sms.html", username=username)
+
+# ===========================================================================
+# RESEND FALLBACK
+# ===========================================================================
+@phase2_bp.route("/resend-sms/<username>")
+def resend_sms(username):
+    """Fallback route if the async SMS fails or gets lost."""
+    
+    # 1. Grab the user's phone number
+    user = User.query.filter_by(username=username).first_or_404()
+    phone = session.get("temp_phone") or user.phone_number
+    
+    if not phone:
+        flash("No phone number found. Please restart setup.", "error")
+        return redirect(url_for("phase1.login"))
+
+    # 2. Generate a fresh OTP and reset the timer
+    import time
+    from .otp_logic import generate_sms_otp, send_otp_async
+    
+    new_otp = generate_sms_otp()
+    session["temp_otp"]      = new_otp
+    session["otp_issued_at"] = time.time()
+    
+    # 3. Fire it off in the background again
+    send_otp_async(phone, new_otp)
+    
+    flash("A new verification code has been dispatched!", "info")
+    
+    # 4. Send them back to the correct page depending on if they are signing up or logging in
+    if "login_user" in session:
+        return redirect(url_for("phase2.login_sms"))
+    else:
+        return redirect(url_for("phase2.verify_sms_page", username=username))

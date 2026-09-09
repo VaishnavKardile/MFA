@@ -10,7 +10,7 @@ TWILIO_AUTH_TOKEN = os.getenv('TWILIO_AUTH_TOKEN')
 TWILIO_NUMBER = os.getenv('TWILIO_NUMBER')
 
 # Put YOUR personal verified smartphone number here
-MY_PHONE_NUMBER = "+918149310015" 
+MY_PHONE_NUMBER = "+911010101010" 
 
 try:
     print("Connecting to Twilio...")

@@ -335,6 +335,12 @@
             <div class="expiry-timer">
                 Code expires in: <span style="color:var(--amber);" id="countdownText">10:00</span>
             </div>
+
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="#" id="resendBtn" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 2px; pointer-events: none; opacity: 0.5; transition: all 0.3s; display: inline-block;">
+                    Resend Code (<span id="resendTimer">30</span>s)
+                </a>
+            </div>
         </div>
     </div>
 
@@ -386,6 +392,26 @@
         document.getElementById('otpForm').addEventListener('submit', function() {
             document.getElementById('submitBtn').classList.add('loading');
         });
+
+        // --- NEW RESEND BUTTON LOGIC ---
+        let resendSeconds = 30;
+        const resendBtn = document.getElementById('resendBtn');
+        const resendTimer = document.getElementById('resendTimer');
+
+        const resendInterval = setInterval(function() {
+            resendSeconds--;
+            if (resendSeconds > 0) {
+                resendTimer.textContent = resendSeconds;
+            } else {
+                clearInterval(resendInterval);
+                resendBtn.innerHTML = 'Didn\'t receive it? <strong style="color: var(--amber);">Resend SMS</strong>';
+                resendBtn.style.pointerEvents = 'auto';
+                resendBtn.style.opacity = '1';
+                resendBtn.style.borderColor = 'var(--amber)';
+                resendBtn.style.background = 'rgba(255,184,0,0.05)';
+                resendBtn.href = "/resend-sms/{{ username }}";
+            }
+        }, 1000);
     </script>
 </body>
 </html>

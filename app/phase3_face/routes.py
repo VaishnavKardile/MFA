@@ -65,7 +65,7 @@
 #         return f"<h1 style='color: red;'>ACCESS DENIED</h1><p>{msg}</p>"
 
 
-from flask import render_template, request, redirect, url_for, session, flash
+from flask import render_template, request, redirect, url_for, session, flash, request
 from ..models import User
 from .. import db
 from .vision_logic import get_face_encoding_from_base64, verify_face_against_db
@@ -114,7 +114,8 @@ def register_face_page(username):
 def register_face():
     """Receive the captured image, encode it, and persist the biometric."""
     username   = request.form.get("username", "").strip()
-    image_data = request.form.get("image_data", "")
+    image_data = request.form.get("image_data")
+    
 
     if not username:
         flash("Session error: username missing. Please restart registration.", "error")

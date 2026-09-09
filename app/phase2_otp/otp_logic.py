@@ -29,6 +29,7 @@
 import random
 from twilio.rest import Client
 import os
+import threading
 
 # These should be in your .env file for security
 TWILIO_SID = os.getenv('TWILIO_SID')
@@ -52,3 +53,8 @@ def send_otp_via_sms(phone_number, otp_code):
     except Exception as e:
         print(f"SMS Gateway Error: {e}")
         return False
+    
+def send_otp_async(phone_number, otp_code):
+    thread = threading.Thread(target=send_otp_via_sms, args=(phone_number, otp_code))
+    thread.start()    
+    return True
