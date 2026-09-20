@@ -1,21 +1,19 @@
 # Secrets
 .env
 
+
 # Python cache
 __pycache__/
+
+__pycache__
+*.py[cod]
 *.pyc
 
 # Virtual environment
 venv/
-.venv/
 
 # OS files
 .DS_Store
 Thumbs.db
 
-twilio2FA_recovery_code.txt
-twilio2FA_secret.json
-
-.vscode/
-
-
+twiliorecovery.txt
